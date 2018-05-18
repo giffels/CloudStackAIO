@@ -1,5 +1,4 @@
 from .Utilities import add_signature
-from .Utilities import Looper
 
 from functools import partial
 
@@ -8,9 +7,11 @@ import aiohttp
 
 
 class CloudStack(object):
-    def __init__(self, end_point):
+    def __init__(self, end_point, api_key, secret, event_loop):
         self.end_point = end_point
-        self.event_loop = Looper().get_event_loop()
+        self.api_key = api_key
+        self.secret = secret
+        self.event_loop = event_loop
         self.client_session = aiohttp.ClientSession(loop=self.event_loop)
 
     def __del__(self):

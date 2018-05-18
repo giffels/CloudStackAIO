@@ -1,6 +1,7 @@
 from CloudStackAIO.CloudStack import CloudStack
 
 from aiohttp import web
+from urllib.parse import unquote
 from unittest import TestCase
 
 import asyncio
@@ -43,7 +44,8 @@ class CloudStack_t(TestCase):
         await cls.runner.cleanup()
 
     def setUp(self):
-        self.cloud_stack_client = CloudStack(end_point="http://localhost:8080")
+        self.cloud_stack_client = CloudStack(end_point="http://localhost:8080", api_key='Test',
+                                             secret='Test', event_loop=self.event_loop)
 
     def test_hello_world_request(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(api="hello"), loop=self.event_loop)
@@ -53,7 +55,8 @@ class CloudStack_t(TestCase):
         params = {'this_is_a_test': '123'}
         response = asyncio.ensure_future(self.cloud_stack_client.request(api="echo", params=params),
                                          loop=self.event_loop)
-        self.assertEqual(self.event_loop.run_until_complete(response), json.dumps(params))
+        self.assertEqual(self.event_loop.run_until_complete(response),
+                         json.dumps({key: unquote(value) for (key, value) in params.items()}))
 
     def test_hello_world_getattr(self):
         response = asyncio.ensure_future(self.cloud_stack_client.hello(), loop=self.event_loop)
@@ -62,4 +65,5 @@ class CloudStack_t(TestCase):
     def test_url_with_params_getattr(self):
         params = {'this_is_a_test': '123'}
         response = asyncio.ensure_future(self.cloud_stack_client.echo(params=params), loop=self.event_loop)
-        self.assertEqual(self.event_loop.run_until_complete(response), json.dumps(params))
+        self.assertEqual(self.event_loop.run_until_complete(response),
+                         json.dumps({key: unquote(value) for (key, value) in params.items()}))
