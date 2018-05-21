@@ -1,7 +1,6 @@
 from CloudStackAIO.CloudStack import CloudStack
 
 from aiohttp import web
-from urllib.parse import unquote
 from unittest import TestCase
 
 import asyncio
@@ -46,24 +45,28 @@ class CloudStack_t(TestCase):
     def setUp(self):
         self.cloud_stack_client = CloudStack(end_point="http://localhost:8080", api_key='Test',
                                              secret='Test', event_loop=self.event_loop)
+        self.test_params = {'Test_Image': 'vm_image_centos', 'Test_Disk': '20',
+                            'Test_Memory': '100', 'signature': 't3Rizjq3rIj+4XBrqY6JReyIxVY='}
 
     def test_hello_world_request(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(api="hello"), loop=self.event_loop)
         self.assertEqual(self.event_loop.run_until_complete(response), "Hello, world")
 
     def test_url_with_params(self):
-        params = {'this_is_a_test': '123'}
-        response = asyncio.ensure_future(self.cloud_stack_client.request(api="echo", params=params),
+        response = asyncio.ensure_future(self.cloud_stack_client.request(api="echo", **self.test_params),
                                          loop=self.event_loop)
-        self.assertEqual(self.event_loop.run_until_complete(response),
-                         json.dumps({key: unquote(value) for (key, value) in params.items()}))
+        self.assertEqual(self.event_loop.run_until_complete(response), json.dumps(self.test_params))
 
     def test_hello_world_getattr(self):
         response = asyncio.ensure_future(self.cloud_stack_client.hello(), loop=self.event_loop)
         self.assertEqual(self.event_loop.run_until_complete(response), "Hello, world")
 
     def test_url_with_params_getattr(self):
-        params = {'this_is_a_test': '123'}
-        response = asyncio.ensure_future(self.cloud_stack_client.echo(params=params), loop=self.event_loop)
-        self.assertEqual(self.event_loop.run_until_complete(response),
-                         json.dumps({key: unquote(value) for (key, value) in params.items()}))
+        response = asyncio.ensure_future(self.cloud_stack_client.echo(**self.test_params), loop=self.event_loop)
+        self.assertEqual(self.event_loop.run_until_complete(response), json.dumps(self.test_params))
+
+    def test_signature_of_params(self):
+        test_signature = 't3Rizjq3rIj+4XBrqY6JReyIxVY='
+
+        test_params = self.cloud_stack_client.sign(self.test_params)
+        self.assertEqual(test_params['signature'], test_signature)

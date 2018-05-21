@@ -1,9 +1,12 @@
-from .Utilities import add_signature
-
 from functools import partial
+from urllib.parse import quote
+from urllib.parse import urlencode
 
 import asyncio
 import aiohttp
+import hashlib
+import hmac
+import base64
 
 
 class CloudStack(object):
@@ -27,7 +30,18 @@ class CloudStack(object):
     def __getattr__(self, api):
         return partial(self.request, api=api)
 
-    @add_signature('test')
-    async def request(self, api, params=None):
-        async with self.client_session.get("{}/{}".format(self.end_point, api), params=params) as response:
+    async def request(self, api, **kwargs):
+        async with self.client_session.get("{}/{}".format(self.end_point, api), params=self.sign(kwargs)) as response:
             return await response.text()
+
+    def sign(self, url_parameters):
+        if url_parameters:
+            try:
+                del url_parameters['signature']  # remove possible existing signature from url parameters
+            except KeyError:
+                pass
+            finally:
+                request_string = urlencode(url_parameters, safe='*', quote_via=quote).lower()
+                digest = hmac.new(self.secret.encode('utf-8'), request_string.encode('utf-8'), hashlib.sha1).digest()
+                url_parameters['signature'] = base64.b64encode(digest).decode('utf-8').strip()
+        return url_parameters
