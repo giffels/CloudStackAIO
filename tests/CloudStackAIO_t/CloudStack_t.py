@@ -2,7 +2,6 @@ from CloudStackAIO.CloudStack import CloudStack
 from CloudStackAIO.CloudStack import CloudStackClientException
 
 from aiohttp import web
-from aiohttp.client_exceptions import ContentTypeError
 from unittest import TestCase
 
 import asyncio
@@ -84,12 +83,12 @@ class CloudStack_t(TestCase):
 
     def test_no_json_response_getattr(self):
         response = asyncio.ensure_future(self.cloud_stack_client.nojson(), loop=self.event_loop)
-        with self.assertRaises(ContentTypeError):
+        with self.assertRaises(CloudStackClientException):
             self.event_loop.run_until_complete(response)
 
     def test_no_json_response(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(command='nojson'), loop=self.event_loop)
-        with self.assertRaises(ContentTypeError):
+        with self.assertRaises(CloudStackClientException):
             self.event_loop.run_until_complete(response)
 
     def test_async_response_okay(self):

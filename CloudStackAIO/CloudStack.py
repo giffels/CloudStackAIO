@@ -48,7 +48,7 @@ class CloudStack(object):
         except aiohttp.client_exceptions.ContentTypeError:
             text = await response.text()
             logging.debug('Content returned by server not of type "application/json"\n Content: {}'.format(text))
-            raise
+            raise CloudStackClientException("Could not decode content. Server did not return proper json content!")
         else:
             data = self.transform_data(data)
 
