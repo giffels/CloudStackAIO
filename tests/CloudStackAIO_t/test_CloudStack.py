@@ -110,3 +110,10 @@ class CloudStack_t(TestCase):
                                          loop=self.event_loop)
         with self.assertRaises(CloudStackClientException):
             self.event_loop.run_until_complete(response)
+
+    def test_closing_session_with_running_loop(self):
+        async def async_sleep():
+            await asyncio.ensure_future(self.cloud_stack_client.hello(), loop=self.event_loop)
+            del(self.cloud_stack_client)
+            await asyncio.sleep(0.1)
+        self.event_loop.run_until_complete(async_sleep())
