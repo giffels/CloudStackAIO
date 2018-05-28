@@ -60,11 +60,11 @@ class CloudStack(object):
         event loop is started.
         """
         try:
-            self.event_loop.run_until_complete(self.close_session())
+            self.event_loop.run_until_complete(self._close_session())
         except RuntimeError:
-            self.event_loop.create_task(self.close_session())
+            self.event_loop.create_task(self._close_session())
 
-    async def close_session(self) -> None:
+    async def _close_session(self) -> None:
         """
         According to the aiohttp documentation all opened sessions need to be closed, before leaving the program. This
         function takes care that the client session is closed. This async co-routine is automatically scheduled, when
@@ -98,11 +98,11 @@ class CloudStack(object):
         :rtype: dict
         """
         kwargs.update(dict(apikey=self.api_key, command=command))
-        async with self.client_session.get(self.end_point, params=self.sign(kwargs)) as response:
-            return await self.handle_response(response=response,
-                                              await_final_result='queryasyncjobresult' not in command.lower())
+        async with self.client_session.get(self.end_point, params=self._sign(kwargs)) as response:
+            return await self._handle_response(response=response,
+                                               await_final_result='queryasyncjobresult' not in command.lower())
 
-    async def handle_response(self, response: aiohttp.client_reqrep.ClientResponse, await_final_result: bool) -> dict:
+    async def _handle_response(self, response: aiohttp.client_reqrep.ClientResponse, await_final_result: bool) -> dict:
         """
         Handles the response returned from the CloudStack API. Some CloudStack API are implemented asynchronous, which
         means that the API call returns just a job id. The actually expected API response is postponed and a specific
@@ -124,7 +124,7 @@ class CloudStack(object):
             logging.debug('Content returned by server not of type "application/json"\n Content: {}'.format(text))
             raise CloudStackClientException("Could not decode content. Server did not return proper json content!")
         else:
-            data = self.transform_data(data)
+            data = self._transform_data(data)
 
         while await_final_result and ('jobid' in data):
             await asyncio.sleep(self.async_poll_latency)
@@ -140,7 +140,7 @@ class CloudStack(object):
 
         return data
 
-    def sign(self, url_parameters: dict) -> dict:
+    def _sign(self, url_parameters: dict) -> dict:
         """
         According to the CloudStack documentation, each request needs to be signed in order to authenticate the user
         account executing the API command. The signature is generated using a combination of the api secret and a SHA-1
@@ -160,7 +160,7 @@ class CloudStack(object):
         return url_parameters
 
     @staticmethod
-    def transform_data(data: dict) -> dict:
+    def _transform_data(data: dict) -> dict:
         """
         Each CloudStack API call returns a nested dictionary structure. The first level contains only one key indicating
         the API that originated the response. This function removes that first level from the data returned to the

@@ -78,7 +78,7 @@ class CloudStack_t(TestCase):
     def test_signature_of_params(self):
         test_signature = 'RXhS9/EhfioAVwNNtkzVS5wojm0='
 
-        test_params = self.cloud_stack_client.sign(self.test_params)
+        test_params = self.cloud_stack_client._sign(self.test_params)
         self.assertEqual(test_params['signature'], test_signature)
 
     def test_no_json_response_getattr(self):

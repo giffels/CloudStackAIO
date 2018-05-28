@@ -107,6 +107,7 @@ html_static_path = ['_static']
 # html_sidebars = {}
 
 autoclass_content = 'both'
+autodoc_default_flags = ['members', 'private-members']
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
