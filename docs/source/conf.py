@@ -106,6 +106,7 @@ html_static_path = ['_static']
 #
 # html_sidebars = {}
 
+autoclass_content = 'both'
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
