@@ -56,7 +56,7 @@ class CloudStack_t(TestCase):
         self.cloud_stack_client = CloudStack(end_point="http://localhost:8080/compute", api_key='Test',
                                              api_secret='Test', event_loop=self.event_loop, async_poll_latency=0)
         self.test_params = {'command': 'echo', 'Test_Image': 'Vm_Image_Centos', 'Test_Disk': '20', 'Test_Memory': '100',
-                            'apikey': 'Test', 'signature': 'RXhS9/EhfioAVwNNtkzVS5wojm0='}
+                            'apikey': 'Test', 'response': 'json', 'signature': 'O6VjOHFMQgk/L/h8EkKsHgCy1ZU='}
 
     def test_hello_world_request(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(command="hello"), loop=self.event_loop)
@@ -76,7 +76,7 @@ class CloudStack_t(TestCase):
         self.assertEqual(self.event_loop.run_until_complete(response), self.test_params)
 
     def test_signature_of_params(self):
-        test_signature = 'RXhS9/EhfioAVwNNtkzVS5wojm0='
+        test_signature = self.test_params['signature']
 
         test_params = self.cloud_stack_client._sign(self.test_params)
         self.assertEqual(test_params['signature'], test_signature)

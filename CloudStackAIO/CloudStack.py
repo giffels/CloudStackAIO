@@ -97,7 +97,7 @@ class CloudStack(object):
         :return: Dictionary containing the decoded json reply of the CloudStack API
         :rtype: dict
         """
-        kwargs.update(dict(apikey=self.api_key, command=command))
+        kwargs.update(dict(apikey=self.api_key, command=command, response='json'))
         async with self.client_session.get(self.end_point, params=self._sign(kwargs)) as response:
             return await self._handle_response(response=response,
                                                await_final_result='queryasyncjobresult' not in command.lower())
