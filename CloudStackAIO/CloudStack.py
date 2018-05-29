@@ -19,8 +19,8 @@ class CloudStackClientException(Exception):
 
 
 class CloudStack(object):
-    def __init__(self, end_point: str, api_key: str, api_secret: str,
-                 event_loop: asyncio.AbstractEventLoop, async_poll_latency: int=2) -> None:
+    def __init__(self, end_point: str, api_key: str, api_secret: str, event_loop: asyncio.AbstractEventLoop,
+                 async_poll_latency: int=2, max_page_size: int=500) -> None:
         """
         Client object to access a CloudStack API
 
@@ -34,6 +34,10 @@ class CloudStack(object):
         :param async_poll_latency: Time in seconds to wait before polling CloudStack API to fetch results of
                                    asynchronous API calls
         :type async_poll_latency: int
+        :param max_page_size: Some API calls are paginated like listVirtualMachines, this number specifies the maximum
+                              number of item returned in one API call. The client automatically takes care of the
+                              pagination by splitting it into separate API calls and returns the entire list
+        :type max_page_size: int
 
         :Example:
 
@@ -50,6 +54,7 @@ class CloudStack(object):
         self.api_secret = api_secret
         self.event_loop = event_loop
         self.async_poll_latency = async_poll_latency
+        self.max_page_size = max_page_size
         self.client_session = aiohttp.ClientSession(loop=self.event_loop)
 
     def __del__(self) -> None:
@@ -98,9 +103,36 @@ class CloudStack(object):
         :rtype: dict
         """
         kwargs.update(dict(apikey=self.api_key, command=command, response='json'))
-        async with self.client_session.get(self.end_point, params=self._sign(kwargs)) as response:
-            return await self._handle_response(response=response,
-                                               await_final_result='queryasyncjobresult' not in command.lower())
+
+        if 'list' in command.lower():  # list APIs can be paginated, therefore include max_page_size and page parameter
+            kwargs.update(dict(pagesize=self.max_page_size, page=1))
+
+        final_data = dict()
+        while True:
+            async with self.client_session.get(self.end_point, params=self._sign(kwargs)) as response:
+                data = await self._handle_response(response=response,
+                                                   await_final_result='queryasyncjobresult' not in command.lower())
+                try:
+                    count = data.pop('count')
+                except KeyError:
+                    if not data:
+                        # Empty dictionary is returned in case a query does not contain any results.
+                        # Can happen also if a listAPI is called with a page that does not exits. Therefore, final_data
+                        # has to be returned in order to return all results from preceding pages.
+                        return final_data
+                    else:
+                        # Only list API calls have a 'count' key inside the response,
+                        # return data as it is in other cases!
+                        return data
+                else:
+                    # update final_data using paginated results, dictionaries of the response contain the count key
+                    # and one key pointing to the actual data values
+                    for key, value in data.items():
+                        final_data.setdefault(key, []).extend(value)
+                    final_data['count'] = final_data.setdefault('count', 0) + count
+                    kwargs['page'] += 1
+                    if count < self.max_page_size:  # no more pages exists
+                        return final_data
 
     async def _handle_response(self, response: aiohttp.client_reqrep.ClientResponse, await_final_result: bool) -> dict:
         """

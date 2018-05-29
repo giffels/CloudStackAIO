@@ -22,6 +22,23 @@ class CloudStack_t(TestCase):
                         3: web.json_response(dict(query_async_job_result=dict(jobstatus=1, jobresultcode=0)))}
             return response[int(url_parameters.get("jobid"))]
 
+        def list_handler(url_parameters):
+            response = {1: web.json_response(dict(list_test_response=dict(count=500,
+                                                                          response=[dict(test1=1, test2=2),]))),
+                        2: web.json_response(dict(list_test_response=dict(count=400,
+                                                                          response=[dict(test3=3, test4=4),])))
+                        }
+            return response[int(url_parameters.get('page'))]
+
+        def list_handler_empty_paginated(url_parameters):
+            response = {1: web.json_response(dict(list_test_response=dict(count=500,
+                                                                          response=[dict(test1=1, test2=2),]))),
+                        2: web.json_response(dict(list_test_response=dict(count=500,
+                                                                          response=[dict(test3=3, test4=4),]))),
+                        3: web.json_response(dict(list_test_response=dict())),
+                        }
+            return response[int(url_parameters.get('page'))]
+
         @routes.get('/compute')
         async def compute(request):
             response = {'echo': lambda x: web.json_response(dict(echoresponse=dict(x.items()))),
@@ -30,7 +47,10 @@ class CloudStack_t(TestCase):
                         'async_ok': lambda x: web.json_response(dict(async_ok_response=dict(jobid=1))),
                         'async_failed_return_code': lambda x: web.json_response(dict(async_ok_response=dict(jobid=2))),
                         'async_missing_results': lambda x: web.json_response(dict(async_ok_response=dict(jobid=3))),
-                        'queryAsyncJobResult': async_handler}
+                        'queryAsyncJobResult': async_handler,
+                        'list_tests': list_handler,
+                        'list_tests_empty_paginated': list_handler_empty_paginated,
+                        'list_tests_empty': lambda x: web.json_response(dict(list_test_response=dict()))}
             return response[request.rel_url.query.get('command')](request.rel_url.query)
 
         app = web.Application()
@@ -56,7 +76,8 @@ class CloudStack_t(TestCase):
         self.cloud_stack_client = CloudStack(end_point="http://localhost:8080/compute", api_key='Test',
                                              api_secret='Test', event_loop=self.event_loop, async_poll_latency=0)
         self.test_params = {'command': 'echo', 'Test_Image': 'Vm_Image_Centos', 'Test_Disk': '20', 'Test_Memory': '100',
-                            'apikey': 'Test', 'response': 'json', 'signature': 'O6VjOHFMQgk/L/h8EkKsHgCy1ZU='}
+                            'apikey': 'Test', 'response': 'json', 'pagesize': '500', 'page': '1',
+                            'signature': 'bw/an0XOIvGmxoGX4qh5GOPj9G8='}
 
     def test_hello_world_request(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(command="hello"), loop=self.event_loop)
@@ -117,3 +138,19 @@ class CloudStack_t(TestCase):
             del(self.cloud_stack_client)
             await asyncio.sleep(0.1)
         self.event_loop.run_until_complete(async_sleep())
+
+    def test_paginated_list_api_call(self):
+        response = asyncio.ensure_future(self.cloud_stack_client.list_tests())
+        self.assertEqual(self.event_loop.run_until_complete(response), {'count': 900,
+                                                                        'response': [dict(test1=1, test2=2),
+                                                                                     dict(test3=3, test4=4)]})
+
+    def test_empty_list_api_call(self):
+        response = asyncio.ensure_future(self.cloud_stack_client.list_tests_empty())
+        self.assertEqual(self.event_loop.run_until_complete(response), {})
+
+    def test_empty_paginated_list_api_call(self):
+        response = asyncio.ensure_future(self.cloud_stack_client.list_tests_empty_paginated())
+        self.assertEqual(self.event_loop.run_until_complete(response), {'count': 1000,
+                                                                        'response': [dict(test1=1, test2=2),
+                                                                                     dict(test3=3, test4=4)]})
