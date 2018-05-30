@@ -59,10 +59,10 @@ class CloudStack(object):
 
     def __del__(self) -> None:
         """
-        The destructor is taking care that the used sessions is closed before the destroying the object. This is
-        mandatory according to the aiohttp documentation. The destructor is thus scheduling a task that takes care of
-        closing the session. Depending wether an event loop is already running, the task is either scheduled or a new
-        event loop is started.
+        Deletion function taking care that the used sessions is closed before the deleting the object. This is
+        mandatory according to the aiohttp documentation. The deletion function is thus scheduling a task that takes
+        care of closing the session. Depending wether an event loop is already running, the task is either scheduled or
+        a new event loop is started.
         """
         try:
             self.event_loop.run_until_complete(self._close_session())
