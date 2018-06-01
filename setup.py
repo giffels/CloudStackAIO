@@ -8,9 +8,10 @@ with open(os.path.join(repo_base_dir, 'README.md'), 'r') as read_me:
 
 setup(
     name='CloudStackAIO',
-    version='0.0.1',
+    version='0.0.2',
     description='Very thin Python CloudStack client using asyncio',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     url='https://github.com/giffels/CloudStackAIO',
     author='Manuel Giffels',
     author_email='giffels@gmail.com',
