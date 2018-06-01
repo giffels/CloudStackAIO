@@ -7,7 +7,7 @@ from unittest import TestCase
 import asyncio
 
 
-class CloudStack_t(TestCase):
+class TestCloudStack(TestCase):
     event_loop = asyncio.get_event_loop()
     runner = None
 
@@ -24,17 +24,17 @@ class CloudStack_t(TestCase):
 
         def list_handler(url_parameters):
             response = {1: web.json_response(dict(list_test_response=dict(count=500,
-                                                                          response=[dict(test1=1, test2=2),]))),
+                                                                          response=[dict(test1=1, test2=2), ]))),
                         2: web.json_response(dict(list_test_response=dict(count=400,
-                                                                          response=[dict(test3=3, test4=4),])))
+                                                                          response=[dict(test3=3, test4=4), ])))
                         }
             return response[int(url_parameters.get('page'))]
 
         def list_handler_empty_paginated(url_parameters):
             response = {1: web.json_response(dict(list_test_response=dict(count=500,
-                                                                          response=[dict(test1=1, test2=2),]))),
+                                                                          response=[dict(test1=1, test2=2), ]))),
                         2: web.json_response(dict(list_test_response=dict(count=500,
-                                                                          response=[dict(test3=3, test4=4),]))),
+                                                                          response=[dict(test3=3, test4=4), ]))),
                         3: web.json_response(dict(list_test_response=dict())),
                         }
             return response[int(url_parameters.get('page'))]
@@ -43,7 +43,7 @@ class CloudStack_t(TestCase):
         async def compute(request):
             response = {'echo': lambda x: web.json_response(dict(echoresponse=dict(x.items()))),
                         'hello': lambda x: web.json_response(dict(helloresponse=dict(text="Hello, world"))),
-                        'nojson': lambda x:web.Response(text="This is not a json response!"),
+                        'nojson': lambda x: web.Response(text="This is not a json response!"),
                         'async_ok': lambda x: web.json_response(dict(async_ok_response=dict(jobid=1))),
                         'async_failed_return_code': lambda x: web.json_response(dict(async_ok_response=dict(jobid=2))),
                         'async_missing_results': lambda x: web.json_response(dict(async_ok_response=dict(jobid=3))),
@@ -135,7 +135,7 @@ class CloudStack_t(TestCase):
     def test_closing_session_with_running_loop(self):
         async def async_sleep():
             await asyncio.ensure_future(self.cloud_stack_client.hello(), loop=self.event_loop)
-            del(self.cloud_stack_client)
+            del self.cloud_stack_client
             await asyncio.sleep(0.1)
         self.event_loop.run_until_complete(async_sleep())
 
