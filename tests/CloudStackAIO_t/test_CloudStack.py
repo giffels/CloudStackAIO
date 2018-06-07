@@ -17,7 +17,7 @@ class TestCloudStack(TestCase):
 
         def async_handler(url_parameters):
             response = {1: web.json_response(dict(query_async_job_result=dict(jobstatus=1, jobresultcode=0,
-                                                                              jobresults=dict(text="Hello, world")))),
+                                                                              jobresult=dict(text="Hello, world")))),
                         2: web.json_response(dict(query_async_job_result=dict(jobstatus=1, jobresultcode=255))),
                         3: web.json_response(dict(query_async_job_result=dict(jobstatus=1, jobresultcode=0)))}
             return response[int(url_parameters.get("jobid"))]

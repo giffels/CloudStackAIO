@@ -164,7 +164,7 @@ class CloudStack(object):
             if data['jobstatus']:  # jobstatus is 0 for pending async CloudStack calls
                 if not data['jobresultcode']:  # exit code is zero
                     try:
-                        return data['jobresults']
+                        return data['jobresult']
                     except KeyError:
                         pass
                 logging.debug("Async CloudStack call returned {}".format(str(data)))
