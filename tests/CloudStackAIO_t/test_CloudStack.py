@@ -18,8 +18,12 @@ class TestCloudStack(TestCase):
         def async_handler(url_parameters):
             response = {1: web.json_response(dict(query_async_job_result=dict(jobstatus=1, jobresultcode=0,
                                                                               jobresult=dict(text="Hello, world")))),
-                        2: web.json_response(dict(query_async_job_result=dict(jobstatus=1, jobresultcode=255))),
-                        3: web.json_response(dict(query_async_job_result=dict(jobstatus=1, jobresultcode=0)))}
+                        2: web.json_response(dict(query_async_job_result=dict(jobstatus=1, jobresultcode=255,
+                                                                              errorcode=255,
+                                                                              errortext="Test Failed Return Code!"))),
+                        3: web.json_response(dict(query_async_job_result=dict(jobstatus=1, jobresultcode=0,
+                                                                              errorcode=254,
+                                                                              errortext="Test Failed No Job Result!")))}
             return response[int(url_parameters.get("jobid"))]
 
         def list_handler(url_parameters):
@@ -104,13 +108,15 @@ class TestCloudStack(TestCase):
 
     def test_no_json_response_getattr(self):
         response = asyncio.ensure_future(self.cloud_stack_client.nojson(), loop=self.event_loop)
-        with self.assertRaises(CloudStackClientException):
+        with self.assertRaises(CloudStackClientException) as context:
             self.event_loop.run_until_complete(response)
+        self.assertEqual(context.exception.message, "Could not decode content. Server did not return json content!")
 
     def test_no_json_response(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(command='nojson'), loop=self.event_loop)
-        with self.assertRaises(CloudStackClientException):
+        with self.assertRaises(CloudStackClientException) as context:
             self.event_loop.run_until_complete(response)
+        self.assertEqual(context.exception.message, "Could not decode content. Server did not return json content!")
 
     def test_async_response_okay(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(command='async_ok'), loop=self.event_loop)
@@ -123,14 +129,22 @@ class TestCloudStack(TestCase):
     def test_async_response_failed_return_code(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(command='async_failed_return_code'),
                                          loop=self.event_loop)
-        with self.assertRaises(CloudStackClientException):
+        with self.assertRaises(CloudStackClientException) as context:
             self.event_loop.run_until_complete(response)
+        exception = context.exception
+        self.assertEqual(exception.message, "Async CloudStack call failed!")
+        self.assertEqual(exception.error_code, 255)
+        self.assertEqual(exception.error_text, "Test Failed Return Code!")
 
     def test_async_response_missing_results(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(command='async_missing_results'),
                                          loop=self.event_loop)
-        with self.assertRaises(CloudStackClientException):
+        with self.assertRaises(CloudStackClientException) as context:
             self.event_loop.run_until_complete(response)
+        exception = context.exception
+        self.assertEqual(exception.message, "Async CloudStack call failed!")
+        self.assertEqual(exception.error_code, 254)
+        self.assertEqual(exception.error_text, "Test Failed No Job Result!")
 
     def test_closing_session_with_running_loop(self):
         async def async_sleep():

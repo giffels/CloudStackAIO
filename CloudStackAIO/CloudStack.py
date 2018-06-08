@@ -15,7 +15,16 @@ class CloudStackClientException(Exception):
     """
     CloudStackClientException used to propagate errors occurred during the processing of CloudStack API calls.
     """
-    pass
+    def __init__(self, message, error_code=None, error_text=None):
+        self.message = message
+        self.error_code = error_code
+        self.error_text = error_text
+
+    def __str__(self):
+        return "(message={}, errorcode={}, errortext={})".format(self.message, self.error_code, self.error_text)
+
+    def __repr__(self):
+        return str(self)
 
 
 class CloudStack(object):
@@ -154,7 +163,7 @@ class CloudStack(object):
         except aiohttp.client_exceptions.ContentTypeError:
             text = await response.text()
             logging.debug('Content returned by server not of type "application/json"\n Content: {}'.format(text))
-            raise CloudStackClientException("Could not decode content. Server did not return proper json content!")
+            raise CloudStackClientException(message="Could not decode content. Server did not return json content!")
         else:
             data = self._transform_data(data)
 
@@ -168,7 +177,9 @@ class CloudStack(object):
                     except KeyError:
                         pass
                 logging.debug("Async CloudStack call returned {}".format(str(data)))
-                raise CloudStackClientException("Async CloudStack call failed!")
+                raise CloudStackClientException(message="Async CloudStack call failed!",
+                                                error_code=data.get("errorcode"),
+                                                error_text=data.get("errortext"))
 
         return data
 
