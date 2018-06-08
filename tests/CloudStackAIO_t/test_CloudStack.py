@@ -135,6 +135,10 @@ class TestCloudStack(TestCase):
         self.assertEqual(exception.message, "Async CloudStack call failed!")
         self.assertEqual(exception.error_code, 255)
         self.assertEqual(exception.error_text, "Test Failed Return Code!")
+        self.assertEqual(str(exception), "(message={}, errorcode={}, errortext={})".format(exception.message,
+                                                                                           exception.error_code,
+                                                                                           exception.error_text))
+        self.assertEqual(repr(exception), str(exception))
 
     def test_async_response_missing_results(self):
         response = asyncio.ensure_future(self.cloud_stack_client.request(command='async_missing_results'),
@@ -145,6 +149,10 @@ class TestCloudStack(TestCase):
         self.assertEqual(exception.message, "Async CloudStack call failed!")
         self.assertEqual(exception.error_code, 254)
         self.assertEqual(exception.error_text, "Test Failed No Job Result!")
+        self.assertEqual(str(exception), "(message={}, errorcode={}, errortext={})".format(exception.message,
+                                                                                           exception.error_code,
+                                                                                           exception.error_text))
+        self.assertEqual(repr(exception), str(exception))
 
     def test_closing_session_with_running_loop(self):
         async def async_sleep():
