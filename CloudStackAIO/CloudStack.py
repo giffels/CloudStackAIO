@@ -15,15 +15,26 @@ class CloudStackClientException(Exception):
     """
     CloudStackClientException used to propagate errors occurred during the processing of CloudStack API calls.
     """
-    def __init__(self, message, error_code=None, error_text=None):
+    def __init__(self, message: str, error_code: str=None, error_text: str=None, response: dict=None):
         self.message = message
         self.error_code = error_code
         self.error_text = error_text
+        self.response = response
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Define string representation of the CloudStackClientException
+        :return: String containing a message, the error code as well as the error text
+        :rtype: str
+        """
         return "(message={}, errorcode={}, errortext={})".format(self.message, self.error_code, self.error_text)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """
+        Define representation of the CloudStackClientException
+        :return: String containing a message, the error code as well as the error text
+        :rtype: str
+        """
         return str(self)
 
 
@@ -179,7 +190,8 @@ class CloudStack(object):
                 logging.debug("Async CloudStack call returned {}".format(str(data)))
                 raise CloudStackClientException(message="Async CloudStack call failed!",
                                                 error_code=data.get("errorcode"),
-                                                error_text=data.get("errortext"))
+                                                error_text=data.get("errortext"),
+                                                response=data)
 
         return data
 
