@@ -177,6 +177,11 @@ class CloudStack(object):
             raise CloudStackClientException(message="Could not decode content. Server did not return json content!")
         else:
             data = self._transform_data(data)
+            if response.status != 200:
+                raise CloudStackClientException(message="Async CloudStack call failed!",
+                                                error_code=data.get("errorcode"),
+                                                error_text=data.get("errortext"),
+                                                response=data)
 
         while await_final_result and ('jobid' in data):
             await asyncio.sleep(self.async_poll_latency)

@@ -45,7 +45,10 @@ class TestCloudStack(TestCase):
 
         @routes.get('/compute')
         async def compute(request):
-            response = {'echo': lambda x: web.json_response(dict(echoresponse=dict(x.items()))),
+            response = {'bad_status': lambda x: web.json_response(dict(bad_status_response=dict(errorcode=523,
+                                                                                                errortext="Bad Status"))
+                                                                  , status=523),
+                        'echo': lambda x: web.json_response(dict(echoresponse=dict(x.items()))),
                         'hello': lambda x: web.json_response(dict(helloresponse=dict(text="Hello, world"))),
                         'nojson': lambda x: web.Response(text="This is not a json response!"),
                         'async_ok': lambda x: web.json_response(dict(async_ok_response=dict(jobid=1))),
@@ -176,3 +179,14 @@ class TestCloudStack(TestCase):
         self.assertEqual(self.event_loop.run_until_complete(response), {'count': 1000,
                                                                         'response': [dict(test1=1, test2=2),
                                                                                      dict(test3=3, test4=4)]})
+
+    def test_bad_status_response(self):
+        with self.assertRaises(CloudStackClientException) as context:
+            self.event_loop.run_until_complete(self.cloud_stack_client.bad_status())
+        exception = context.exception
+        self.assertEqual(exception.message, "Async CloudStack call failed!")
+        self.assertEqual(exception.error_code, 523)
+        self.assertEqual(exception.error_text, "Bad Status")
+        self.assertEqual(str(exception), "(message={}, errorcode={}, errortext={})".format(exception.message,
+                                                                                           exception.error_code,
+                                                                                           exception.error_text))
