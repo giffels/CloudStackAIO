@@ -232,4 +232,7 @@ class CloudStack(object):
         :rtype: dict
         """
         for key in data.keys():
-            return data[key]
+            return_value = data[key]
+            if isinstance(return_value, dict):
+                return return_value
+        return data

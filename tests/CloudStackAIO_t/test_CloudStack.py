@@ -57,7 +57,9 @@ class TestCloudStack(TestCase):
                         'queryAsyncJobResult': async_handler,
                         'list_tests': list_handler,
                         'list_tests_empty_paginated': list_handler_empty_paginated,
-                        'list_tests_empty': lambda x: web.json_response(dict(list_test_response=dict()))}
+                        'list_tests_empty': lambda x: web.json_response(dict(list_test_response=dict())),
+                        'timeout': lambda x: web.json_response(dict(message='timed out after 1000.0 milliseconds'),
+                                                               status=500)}
             return response[request.rel_url.query.get('command')](request.rel_url.query)
 
         app = web.Application()
@@ -190,3 +192,12 @@ class TestCloudStack(TestCase):
         self.assertEqual(str(exception), "(message={}, errorcode={}, errortext={})".format(exception.message,
                                                                                            exception.error_code,
                                                                                            exception.error_text))
+
+    def test_timeout_response(self):
+        with self.assertRaises(CloudStackClientException) as context:
+            self.event_loop.run_until_complete(self.cloud_stack_client.timeout())
+        exception = context.exception
+        self.assertEqual(exception.message, "Async CloudStack call failed!")
+        self.assertEqual(exception.error_code, None)
+        self.assertEqual(exception.error_text, None)
+        self.assertEqual(exception.response, {'message': 'timed out after 1000.0 milliseconds'})
