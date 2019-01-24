@@ -198,6 +198,6 @@ class TestCloudStack(TestCase):
             self.event_loop.run_until_complete(self.cloud_stack_client.timeout())
         exception = context.exception
         self.assertEqual(exception.message, "Async CloudStack call failed!")
-        self.assertEqual(exception.error_code, None)
+        self.assertEqual(exception.error_code, 500)
         self.assertEqual(exception.error_text, None)
         self.assertEqual(exception.response, {'message': 'timed out after 1000.0 milliseconds'})

@@ -179,7 +179,7 @@ class CloudStack(object):
             data = self._transform_data(data)
             if response.status != 200:
                 raise CloudStackClientException(message="Async CloudStack call failed!",
-                                                error_code=data.get("errorcode"),
+                                                error_code=data.get("errorcode", response.status),
                                                 error_text=data.get("errortext"),
                                                 response=data)
 
