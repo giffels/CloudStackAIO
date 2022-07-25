@@ -15,7 +15,14 @@ class CloudStackClientException(Exception):
     """
     CloudStackClientException used to propagate errors occurred during the processing of CloudStack API calls.
     """
-    def __init__(self, message: str, error_code: str=None, error_text: str=None, response: dict=None):
+
+    def __init__(
+        self,
+        message: str,
+        error_code: str = None,
+        error_text: str = None,
+        response: dict = None,
+    ):
         self.message = message
         self.error_code = error_code
         self.error_text = error_text
@@ -27,7 +34,9 @@ class CloudStackClientException(Exception):
         :return: String containing a message, the error code as well as the error text
         :rtype: str
         """
-        return "(message={}, errorcode={}, errortext={})".format(self.message, self.error_code, self.error_text)
+        return "(message={}, errorcode={}, errortext={})".format(
+            self.message, self.error_code, self.error_text
+        )
 
     def __repr__(self) -> str:
         """
@@ -39,8 +48,15 @@ class CloudStackClientException(Exception):
 
 
 class CloudStack(object):
-    def __init__(self, end_point: str, api_key: str, api_secret: str, event_loop: asyncio.AbstractEventLoop,
-                 async_poll_latency: int=2, max_page_size: int=500) -> None:
+    def __init__(
+        self,
+        end_point: str,
+        api_key: str,
+        api_secret: str,
+        event_loop: asyncio.AbstractEventLoop,
+        async_poll_latency: int = 2,
+        max_page_size: int = 500,
+    ) -> None:
         """
         Client object to access a CloudStack API
 
@@ -96,7 +112,9 @@ class CloudStack(object):
         the client object is destroyed.
         """
         await self.client_session.close()
-        await asyncio.sleep(0.25)  # http://aiohttp.readthedocs.io/en/stable/client_advanced.html#graceful-shutdown
+        await asyncio.sleep(
+            0.25
+        )  # http://aiohttp.readthedocs.io/en/stable/client_advanced.html#graceful-shutdown
 
     def __getattr__(self, command: str) -> Callable:
         """
@@ -122,18 +140,24 @@ class CloudStack(object):
         :return: Dictionary containing the decoded json reply of the CloudStack API
         :rtype: dict
         """
-        kwargs.update(dict(apikey=self.api_key, command=command, response='json'))
+        kwargs.update(dict(apikey=self.api_key, command=command, response="json"))
 
-        if 'list' in command.lower():  # list APIs can be paginated, therefore include max_page_size and page parameter
+        if (
+            "list" in command.lower()
+        ):  # list APIs can be paginated, therefore include max_page_size and page parameter
             kwargs.update(dict(pagesize=self.max_page_size, page=1))
 
         final_data = dict()
         while True:
-            async with self.client_session.get(self.end_point, params=self._sign(kwargs)) as response:
-                data = await self._handle_response(response=response,
-                                                   await_final_result='queryasyncjobresult' not in command.lower())
+            async with self.client_session.get(
+                self.end_point, params=self._sign(kwargs)
+            ) as response:
+                data = await self._handle_response(
+                    response=response,
+                    await_final_result="queryasyncjobresult" not in command.lower(),
+                )
                 try:
-                    count = data.pop('count')
+                    count = data.pop("count")
                 except KeyError:
                     if not data:
                         # Empty dictionary is returned in case a query does not contain any results.
@@ -149,12 +173,14 @@ class CloudStack(object):
                     # and one key pointing to the actual data values
                     for key, value in data.items():
                         final_data.setdefault(key, []).extend(value)
-                    final_data['count'] = final_data.setdefault('count', 0) + count
-                    kwargs['page'] += 1
+                    final_data["count"] = final_data.setdefault("count", 0) + count
+                    kwargs["page"] += 1
                     if count < self.max_page_size:  # no more pages exists
                         return final_data
 
-    async def _handle_response(self, response: aiohttp.client_reqrep.ClientResponse, await_final_result: bool) -> dict:
+    async def _handle_response(
+        self, response: aiohttp.client_reqrep.ClientResponse, await_final_result: bool
+    ) -> dict:
         """
         Handles the response returned from the CloudStack API. Some CloudStack API are implemented asynchronous, which
         means that the API call returns just a job id. The actually expected API response is postponed and a specific
@@ -173,30 +199,40 @@ class CloudStack(object):
             data = await response.json()
         except aiohttp.client_exceptions.ContentTypeError:
             text = await response.text()
-            logging.debug('Content returned by server not of type "application/json"\n Content: {}'.format(text))
-            raise CloudStackClientException(message="Could not decode content. Server did not return json content!")
+            logging.debug(
+                'Content returned by server not of type "application/json"\n Content: {}'.format(
+                    text
+                )
+            )
+            raise CloudStackClientException(
+                message="Could not decode content. Server did not return json content!"
+            )
         else:
             data = self._transform_data(data)
             if response.status != 200:
-                raise CloudStackClientException(message="Async CloudStack call failed!",
-                                                error_code=data.get("errorcode", response.status),
-                                                error_text=data.get("errortext"),
-                                                response=data)
+                raise CloudStackClientException(
+                    message="Async CloudStack call failed!",
+                    error_code=data.get("errorcode", response.status),
+                    error_text=data.get("errortext"),
+                    response=data,
+                )
 
-        while await_final_result and ('jobid' in data):
+        while await_final_result and ("jobid" in data):
             await asyncio.sleep(self.async_poll_latency)
-            data = await self.queryAsyncJobResult(jobid=data['jobid'])
-            if data['jobstatus']:  # jobstatus is 0 for pending async CloudStack calls
-                if not data['jobresultcode']:  # exit code is zero
+            data = await self.queryAsyncJobResult(jobid=data["jobid"])
+            if data["jobstatus"]:  # jobstatus is 0 for pending async CloudStack calls
+                if not data["jobresultcode"]:  # exit code is zero
                     try:
-                        return data['jobresult']
+                        return data["jobresult"]
                     except KeyError:
                         pass
                 logging.debug("Async CloudStack call returned {}".format(str(data)))
-                raise CloudStackClientException(message="Async CloudStack call failed!",
-                                                error_code=data.get("errorcode"),
-                                                error_text=data.get("errortext"),
-                                                response=data)
+                raise CloudStackClientException(
+                    message="Async CloudStack call failed!",
+                    error_code=data.get("errorcode"),
+                    error_text=data.get("errortext"),
+                    response=data,
+                )
 
         return data
 
@@ -213,10 +249,20 @@ class CloudStack(object):
         :rtype: dict
         """
         if url_parameters:
-            url_parameters.pop('signature', None)  # remove potential existing signature from url parameters
-            request_string = urlencode(sorted(url_parameters.items()), safe='.-*_', quote_via=quote).lower()
-            digest = hmac.new(self.api_secret.encode('utf-8'), request_string.encode('utf-8'), hashlib.sha1).digest()
-            url_parameters['signature'] = base64.b64encode(digest).decode('utf-8').strip()
+            url_parameters.pop(
+                "signature", None
+            )  # remove potential existing signature from url parameters
+            request_string = urlencode(
+                sorted(url_parameters.items()), safe=".-*_", quote_via=quote
+            ).lower()
+            digest = hmac.new(
+                self.api_secret.encode("utf-8"),
+                request_string.encode("utf-8"),
+                hashlib.sha1,
+            ).digest()
+            url_parameters["signature"] = (
+                base64.b64encode(digest).decode("utf-8").strip()
+            )
         return url_parameters
 
     @staticmethod
