@@ -1,7 +1,7 @@
 from functools import partial
 from urllib.parse import quote
 from urllib.parse import urlencode
-from typing import Callable
+from typing import Callable, Optional
 
 import asyncio
 import aiohttp
@@ -53,7 +53,7 @@ class CloudStack(object):
         end_point: str,
         api_key: str,
         api_secret: str,
-        event_loop: asyncio.AbstractEventLoop,
+        event_loop: Optional[asyncio.AbstractEventLoop] = None,
         async_poll_latency: int = 2,
         max_page_size: int = 500,
     ) -> None:
@@ -66,7 +66,7 @@ class CloudStack(object):
         :type api_key: str
         :param api_secret: Secret to access the CloudStack API (usually available from your cloud provider)
         :param event_loop: asyncio event loop to utilize
-        :type event_loop: asyncio.AbstractEventLoop
+        :type event_loop: Optional[asyncio.AbstractEventLoop]
         :param async_poll_latency: Time in seconds to wait before polling CloudStack API to fetch results of
                                    asynchronous API calls
         :type async_poll_latency: int
@@ -88,10 +88,10 @@ class CloudStack(object):
         self.end_point = end_point
         self.api_key = api_key
         self.api_secret = api_secret
-        self.event_loop = event_loop
+        self._event_loop = event_loop
         self.async_poll_latency = async_poll_latency
         self.max_page_size = max_page_size
-        self.client_session = aiohttp.ClientSession(loop=self.event_loop)
+        self._client_session = None
 
     def __del__(self) -> None:
         """
@@ -126,6 +126,18 @@ class CloudStack(object):
         :return: Partial function that can be used the call the CloudStack API specified in the command string.
         """
         return partial(self.request, command=command)
+
+    @property
+    def client_session(self):
+        if not self._client_session:
+            self._client_session = aiohttp.ClientSession(loop=self.event_loop)
+        return self._client_session
+
+    @property
+    def event_loop(self):
+        if not self._event_loop:
+            self._event_loop = asyncio.get_event_loop()
+        return self._event_loop
 
     async def request(self, command: str, **kwargs) -> dict:
         """

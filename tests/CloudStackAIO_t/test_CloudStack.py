@@ -344,3 +344,18 @@ class TestCloudStack(TestCase):
         self.assertEqual(
             exception.response, {"message": "timed out after 1000.0 milliseconds"}
         )
+
+    def test_loop_optionality(self):
+        cloud_stack_client = CloudStack(
+            end_point="http://localhost:8080/compute",
+            api_key="Test",
+            api_secret="Test",
+            async_poll_latency=0,
+        )
+
+        response = asyncio.ensure_future(
+            cloud_stack_client.request(command="hello"), loop=self.event_loop
+        )
+        self.assertEqual(
+            self.event_loop.run_until_complete(response), {"text": "Hello, world"}
+        )
