@@ -8,7 +8,7 @@ with open(os.path.join(repo_base_dir, "README.md"), "r") as read_me:
 
 setup(
     name="CloudStackAIO",
-    version="0.0.7",
+    version="0.0.8",
     description="Very thin Python CloudStack client using asyncio",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -26,6 +26,10 @@ setup(
         "Framework :: AsyncIO",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     keywords="asyncio cloudstack client",
     packages=find_packages(exclude=["tests"]),
