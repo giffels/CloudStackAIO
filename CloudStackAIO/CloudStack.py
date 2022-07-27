@@ -226,7 +226,7 @@ class CloudStack(object):
         """
         try:
             data = await response.json()
-        except aiohttp.client_exceptions.ContentTypeError:
+        except aiohttp.client_exceptions.ContentTypeError as ex:
             text = await response.text()
             logging.debug(
                 'Content returned by server not of type "application/json"\n Content: {}'.format(  # noqa E501
@@ -235,7 +235,7 @@ class CloudStack(object):
             )
             raise CloudStackClientException(
                 message="Could not decode content. Server did not return json content!"
-            )
+            ) from ex
         else:
             data = self._transform_data(data)
             if response.status != 200:
@@ -244,7 +244,7 @@ class CloudStack(object):
                     error_code=data.get("errorcode", response.status),
                     error_text=data.get("errortext"),
                     response=data,
-                )
+                ) from None
 
         while await_final_result and ("jobid" in data):
             await asyncio.sleep(self.async_poll_latency)
@@ -261,7 +261,7 @@ class CloudStack(object):
                     error_code=data.get("errorcode"),
                     error_text=data.get("errortext"),
                     response=data,
-                )
+                ) from None
 
         return data
 
