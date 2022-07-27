@@ -30,6 +30,9 @@ setup(
     keywords="asyncio cloudstack client",
     packages=find_packages(exclude=["tests"]),
     install_requires=["aiohttp"],
+    extras_require={
+        "contrib": ["flake8", "flake8-bugbear", "black; implementation_name=='cpython'"]
+    },
     test_suite="tests",
     zip_safe=False,
     package_data={
